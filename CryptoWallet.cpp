@@ -5,8 +5,12 @@
 #include <iomanip>
 #include <sqlite3.h>
 #include <openssl/sha.h>
+#include <thread>
+#include <atomic>
 
 using namespace std;
+
+atomic<int> wallet_count(0);  
 
 void save_to_file(const string& log_path, const string& phrase, const string& address, const string& private_key) {
     ofstream log_file(log_path, ios::app);
@@ -89,6 +93,20 @@ void generate_wallet(const string& db_path, const string& log_path, const vector
     }
 
     sqlite3_close(db);
+
+    wallet_count++; 
+}
+
+void generate_wallets_in_parallel(const string& db_path, const string& log_path, const vector<string>& word_list, int num_threads) {
+    vector<thread> threads;
+
+    for (int i = 0; i < num_threads; ++i) {
+        threads.push_back(thread(generate_wallet, db_path, log_path, word_list));
+    }
+
+    for (auto& th : threads) {
+        th.join();
+    }
 }
 
 int main() {
@@ -101,8 +119,11 @@ int main() {
         return 1;
     }
 
+    int num_threads = thread::hardware_concurrency();  
+    cout << "Using " << num_threads << " threads." << endl;
+
     while (true) {
-        generate_wallet(db_path, log_path, word_list);
+        generate_wallets_in_parallel(db_path, log_path, word_list, num_threads);
     }
 
     return 0;
