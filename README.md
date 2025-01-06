@@ -36,7 +36,7 @@ Ensure you have the following installed on your system:
 ### ⚙️ 2. Compile the Code
 Run the following command in your terminal:
 ```bash
-g++ -std=c++17 -o wallet_generator wallet_generator.cpp -lsqlite3 -lssl -lcrypto -lpthread
+g++ -o CryptoWallet CryptoWallet.cpp -lssl -lcrypto -lsqlite3 -Wno-deprecated-declarations
 ```
 
 ### ▶️ 3. Run the Program
