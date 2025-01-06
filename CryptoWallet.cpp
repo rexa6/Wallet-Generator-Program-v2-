@@ -2,15 +2,16 @@
 #include <fstream>
 #include <vector>
 #include <random>
-#include <iomanip>
-#include <sqlite3.h>
-#include <openssl/sha.h>
 #include <thread>
 #include <atomic>
+#include <sstream>
+#include <ctime>
+#include <sqlite3.h>
+#include <openssl/sha.h>
 
 using namespace std;
 
-atomic<int> wallet_count(0);  
+atomic<int> wallet_count(0);
 
 void save_to_file(const string& log_path, const string& phrase, const string& address, const string& private_key) {
     ofstream log_file(log_path, ios::app);
@@ -51,7 +52,7 @@ string sha256_hash(const string& input) {
 
     stringstream hex_stream;
     for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
-        hex_stream << hex << setw(2) << setfill('0') << (int)hash[i];
+        hex_stream << hash[i];
     }
     return hex_stream.str();
 }
@@ -65,7 +66,8 @@ bool check_address_in_db(sqlite3* db, const string& address) {
         return false;
     }
 
-    sqlite3_bind_text(stmt, 1, address.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_blob(stmt, 1, address.data(), address.size(), SQLITE_STATIC);
+
     int rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
 
@@ -83,18 +85,18 @@ void generate_wallet(const string& db_path, const string& log_path, const vector
     string private_key = sha256_hash(mnemonic);
     string address = sha256_hash(private_key);
 
-    cout << "Seed: " << mnemonic << endl;
-    cout << "Private: " << private_key << endl;
-    cout << "Address: " << address << endl;
-    cout << "-----------------------------" << endl;
+    wallet_count++;
 
     if (check_address_in_db(db, address)) {
         save_to_file(log_path, mnemonic, address, private_key);
+        cout << "\nFound wallet!" << endl;
+        cout << "Seed: " << mnemonic << endl;
+        cout << "Address: " << address << endl;
+        cout << "Private: " << private_key << endl;
+        cout << "-----------------------------" << endl;
     }
 
     sqlite3_close(db);
-
-    wallet_count++; 
 }
 
 void generate_wallets_in_parallel(const string& db_path, const string& log_path, const vector<string>& word_list, int num_threads) {
@@ -109,6 +111,25 @@ void generate_wallets_in_parallel(const string& db_path, const string& log_path,
     }
 }
 
+void update_terminal_status(int num_threads, time_t start_time) {
+    while (true) {
+        time_t now = time(0);
+        double duration = difftime(now, start_time);
+
+        int hours = duration / 3600;
+        int minutes = (duration - (hours * 3600)) / 60;
+        int seconds = (duration - (hours * 3600) - (minutes * 60));
+
+        string time_str = to_string(hours) + ":" + (minutes < 10 ? "0" : "") + to_string(minutes) + ":" + (seconds < 10 ? "0" : "") + to_string(seconds);
+
+        cout << "\rGenerated wallets: " << wallet_count.load()
+             << " | Threads in use: " << num_threads
+             << " | Elapsed time: " << time_str << flush;
+
+        this_thread::sleep_for(chrono::seconds(1));
+    }
+}
+
 int main() {
     string db_path = "./database.db";
     string log_path = "./log.txt";
@@ -119,12 +140,12 @@ int main() {
         return 1;
     }
 
-    int num_threads = thread::hardware_concurrency();  
-    cout << "Using " << num_threads << " threads." << endl;
+    int num_threads = thread::hardware_concurrency();
+    time_t start_time = time(0);
+    thread status_thread(update_terminal_status, num_threads, start_time);
+    status_thread.detach();
 
     while (true) {
         generate_wallets_in_parallel(db_path, log_path, word_list, num_threads);
     }
-
-    return 0;
 }

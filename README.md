@@ -1,148 +1,126 @@
 Wallet Generator Program v2 🚀
 
-## Overview 🌟
+# 🚀 Wallet Generator v2
 
-This program is a cryptocurrency wallet generator written in C++. It creates wallets by generating mnemonic phrases, private keys, and public keys, calculates wallet addresses, and logs the wallet data if the address is found in a SQLite database. The program runs continuously in a loop, generating and logging wallets.
-
----
-
-## Features ✨
-
-1. **Mnemonic Phrase Generation** 📝:
-   - Generates 12-word mnemonic phrases using a provided word list file (`bip.txt`).
-
-2. **Cryptographic Key Generation** 🔑:
-   - Generates private keys using a Keccak256 hash of the mnemonic.
-   - Creates elliptic curve public keys using the `secp256k1` curve.
-
-3. **Wallet Address Calculation** 🏦:
-   - Derives wallet addresses from the public key using a Keccak256 hash.
-
-4. **SQLite Database Check** 🔍:
-   - Checks if the generated address exists in a SQLite database (`database.db`).
-
-5. **Logging** 📜:
-   - Logs the mnemonic phrase, wallet address, and private key to a file (`log.txt`) if the address is found in the database.
-
-6. **Error Handling** ⚠️:
-   - Handles errors related to file I/O, SQLite operations, and OpenSSL key generation.
+This project is a multithreaded wallet generator written in C++ that checks generated wallets against a SQLite database containing binary-encoded addresses (BLOB). It uses the **SHA256** hashing algorithm and supports **mnemonic phrase generation**.
 
 ---
 
-## Requirements 📦
+## 🛠 Features
 
-### Software 💻
-- **C++17 or later**
-- **Libraries**:
-  - [SQLite3](https://www.sqlite.org) 🛢️
-  - [OpenSSL](https://www.openssl.org) 🔐
-
-### Files 📂
-- **Word List File**:
-  - A text file named `bip.txt` containing words for mnemonic phrase generation, one word per line.
-- **Database**:
-  - A SQLite database file named `database.db` with a table `addresses` containing wallet addresses.
+- 🔑 **Generate Wallets**: Create wallets using random mnemonic phrases.
+- 🗂 **Database Lookup**: Cross-check generated wallets against a SQLite database of binary-encoded addresses (BLOB).
+- 🌍 **Multithreading**: Utilize multiple CPU threads for high performance.
+- 📜 **Logging**: Save successfully matched wallets to a log file.
+- ⏲ **Real-Time Status**: Display generation stats in the terminal.
 
 ---
 
-## Installation 🛠️
+## 🏗 Prerequisites
 
-### Prerequisites 🧰
-1. Install the required libraries:
-   - **Linux**: 
-     ```bash
-     sudo apt-get install libsqlite3-dev libssl-dev
-     ```
-   - **macOS**: 
-     ```bash
-     brew install sqlite openssl
-     ```
-   - **Windows**:
-     Install libraries using vcpkg or download precompiled binaries from official sources.
-
-2. Ensure the `bip.txt` file is in the same directory as the program.
-
-### Build Instructions 🏗️
-1. Clone or download the source code.
-2. Compile the program:
-   ```bash
-   g++ -o wallet_generator wallet_generator.cpp -lsqlite3 -lssl -lcrypto
-   ```
+1. **C++17** or higher.
+2. **SQLite3** development library.
+3. **OpenSSL** for SHA256 hashing.
+4. A word list file (`bip.txt`) containing the words for generating mnemonic phrases.
+5. A SQLite database (`database.db`) with a table `addresses` and `BLOB` type for storing wallet addresses.
 
 ---
 
-## Usage 🚀
+## 📦 How to Build and Run
 
-1. Ensure the `database.db` and `bip.txt` files are present in the working directory.
-2. Run the program:
-   ```bash
-   ./wallet_generator
-   ```
-3. The program will continuously generate wallets, check the database for matches, and log matched wallets to `log.txt`. 🗂️
+### 🧰 1. Install Dependencies
+Ensure you have the following installed on your system:
+- SQLite3 development package (`libsqlite3-dev` on Ubuntu, `sqlite-devel` on Fedora).
+- OpenSSL library (`libssl-dev` on Ubuntu, `openssl-devel` on Fedora).
+
+### ⚙️ 2. Compile the Code
+Run the following command in your terminal:
+```bash
+g++ -std=c++17 -o wallet_generator wallet_generator.cpp -lsqlite3 -lssl -lcrypto -lpthread
+```
+
+### ▶️ 3. Run the Program
+Run the compiled binary:
+```bash
+./wallet_generator
+```
+
+The program will:
+1. Load words from the `bip.txt` file.
+2. Continuously generate wallets and check if they exist in the `database.db` SQLite database.
+3. Save found wallets to a `log.txt` file.
 
 ---
 
-## Program Structure 🧩
+## 🗂 Project Structure
 
-### Functions 🔧
-1. **`save_to_file`**: Logs wallet data to a file.
-2. **`read_words_from_file`**: Reads words from `bip.txt` for mnemonic generation.
-3. **`generate_mnemonic`**: Creates a 12-word mnemonic phrase.
-4. **`keccak256_hash`**: Computes a Keccak256 hash.
-5. **`check_address_in_db`**: Queries the SQLite database to check for an address.
-6. **`generate_wallet`**: Orchestrates the wallet creation and logging process.
-
-### Main Loop 🔄
-The program runs an infinite loop, calling the `generate_wallet` function to generate and process wallets continuously.
+```
+├── wallet_generator.cpp    # Main C++ source code
+├── bip.txt                 # Word list file for generating mnemonic phrases
+├── database.db             # SQLite database with binary-encoded addresses (BLOB)
+├── log.txt                 # Output file for matched wallets
+└── README.md               # Project documentation
+```
 
 ---
 
-## File Formats 📄
+## ⚡️ Usage Details
 
-### `bip.txt` 📘
-- Contains a list of words, one per line.
-- Example:
-  ```
-  apple
-  banana
-  cherry
-  ...
-  ```
+### 🔢 Multithreading
+The number of threads defaults to the hardware concurrency on your machine. You can modify this by changing:
+```cpp
+int num_threads = thread::hardware_concurrency();
+```
 
-### `log.txt` 🗒️
-- Logs wallet details in the following format:
-  ```
-  Seed: <mnemonic phrase>
-  Address: <wallet address>
-  Private: <private key>
-  -----------------------------
+### 📝 Logging
+Matched wallets will be logged in the following format:
+```
+Seed: <mnemonic phrase>
+Address: <generated address>
+Private: <private key>
+-----------------------------
+```
+
+### 🗄 Database
+- The SQLite database `database.db` must have a table named `addresses` with a column `address` of type `BLOB`.
+- Example table creation SQL:
+  ```sql
+  CREATE TABLE addresses (
+      address BLOB NOT NULL
+  );
   ```
 
 ---
 
-## Customization 🎨
+## ✨ Example Output
 
-1. **Database Path**:
-   - Change the `db_path` variable to use a different SQLite database.
+**Terminal Status:**
+```
+Generated wallets: 100000 | Threads in use: 8 | Elapsed time: 0:01:25
+```
 
-2. **Log File Path**:
-   - Update the `log_path` variable to specify a different log file.
+**Log File (`log.txt`):**
+```
+Seed: travel moon galaxy tiger forest orbit token velvet sun flame salmon lucky
+Address: a3b1c5d6e7f9...
+Private: d4e5f6a7b8c9...
+-----------------------------
+```
 
 ---
 
-## Known Issues 🐛
+## 📚 Resources
 
-1. **Infinite Loop** 🔁:
-   - The program runs indefinitely. Modify the `main` function to control execution flow if necessary.
+- [SQLite Documentation](https://sqlite.org/docs.html)
+- [OpenSSL Documentation](https://www.openssl.org/docs/)
 
-2. **Error Handling** ⚠️:
-   - Minimal error handling for database schema or corrupted files. Ensure the input files are well-formed.
-
-3. **Performance** ⏱️:
-   - Random generation and database queries may be slow for large word lists or databases.
-  
 ---
 
-## Contributing 🤝
+## 🛡 License
 
-Contributions, bug reports, and feature requests are welcome! Fork the repository and submit a pull request. 💡
+This project is released under the **MIT License**. Feel free to use and modify it.
+
+---
+
+🎉 **Happy Wallet Generating!** 🎉
+
