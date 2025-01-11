@@ -112,7 +112,7 @@ Private: d4e5f6a7b8c9...
 ## 📚 Resources
 
 - [SQLite Documentation](https://sqlite.org/docs.html)
-- [OpenSSL Documentation]([https://www.openssl.org/docs/](https://docs.openssl.org/master/man1/openssl/#standard-commands)
+- [OpenSSL Documentation](https://docs.openssl.org/master/man1/openssl/#standard-commands)
 
 ---
 
