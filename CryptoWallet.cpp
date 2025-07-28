@@ -83,6 +83,19 @@ public:
         if (sqlite3_open(db_path.c_str(), &db) != SQLITE_OK) {
             throw runtime_error("Failed to open database: " + string(sqlite3_errmsg(db)));
         }
+
+        const char* create_table_sql = R"(
+            CREATE TABLE IF NOT EXISTS addresses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                address TEXT NOT NULL,
+                private_key TEXT
+            );
+        )";
+        char* errMsg = nullptr;
+        if (sqlite3_exec(db, create_table_sql, nullptr, nullptr, &errMsg) != SQLITE_OK) {
+            cerr << "Failed to create table: " << errMsg << endl;
+            sqlite3_free(errMsg);
+        }
     }
 
     ~Database() {
@@ -104,20 +117,6 @@ public:
         sqlite3_finalize(stmt);
 
         return rc == SQLITE_ROW;
-
-        const char* create_table_sql = R"(
-        CREATE TABLE IF NOT EXISTS addresses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            address TEXT NOT NULL,
-            private_key TEXT
-        );
-    )";
-    char* errMsg = nullptr;
-    if (sqlite3_exec(db, create_table_sql, nullptr, nullptr, &errMsg) != SQLITE_OK) {
-        cerr << "Failed to create table: " << errMsg << endl;
-        sqlite3_free(errMsg);
-}
-
     }
 
 private:
